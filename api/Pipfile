@@ -1,0 +1,25 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = "*"
+sqlalchemy = "*"
+uvicorn = "*"
+python-jose = "*"
+jose = "*"
+fastapi-jwt-auth = "*"
+
+[dev-packages]
+pylint = "*"
+flake8 = "*"
+bandit = "*"
+autopep8 = "*"
+black = "*"
+
+[requires]
+python_version = "3.9"
+
+[pipenv]
+allow_prereleases = true

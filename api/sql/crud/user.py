@@ -1,0 +1,25 @@
+from sqlalchemy.orm import Session
+
+from .. import models
+from ..schemas.user import UserCreate
+
+
+def get_user(db: Session, id: int):
+    return db.query(models.User).filter(models.User.id == id).first()
+
+
+def get_users_by_group_id(db: Session, group_id: id):
+    return db.query(models.User).filter(models.User.group_id == group_id).all()
+
+
+def get_users(db: Session):
+    return db.query(models.User).all()
+
+
+def create_user(db: Session, user: UserCreate):
+    db_user = models.User(
+        name=user.name, is_owner=user.is_owner, group_id=user.group_id)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
