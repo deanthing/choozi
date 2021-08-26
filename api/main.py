@@ -13,7 +13,7 @@ from sql.schemas.release_period import ReleasePeriodCreate, ReleasePeriodOut
 from sql.schemas.user import UserCreate, UserOut
 from sql.schemas.group import GroupCreate, GroupOut
 from sql.schemas.genre import GenreCreate, GenreOut
-from sql.schemas.movie import MovieCreate, MovieOut
+from sql.schemas.movie import MovieCreate, MovieOut, MovieListOut, MovieListCreate
 from sql.schemas.like import LikeCreate, LikeOut
 from sql.schemas.token import TokenUser, Settings
 from sql.schemas.streaming_provider import StreamingProviderCreate, StreamingProviderOut
@@ -180,6 +180,14 @@ async def create_movie(
 ):
     # Authorize.jwt_required()
     return movie.create_movie(db=db, movie=movie_in)
+
+
+@app.post("/movieslist", response_model=MovieListOut)
+async def create_movie(
+    movies_in: MovieListCreate, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
+):
+    # Authorize.jwt_required()
+    return movie.create_movies(db=db, movies=movies_in)
 
 
 @app.get("/movies", response_model=List[MovieOut])

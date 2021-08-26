@@ -24,11 +24,14 @@ def get_groups(db: Session):
 def create_group(db: Session, group: GroupCreate):
     db_group = models.Group()
 
-    for release_period in group.release_periods:
+    db_release_period = models.ReleasePeriod(
+        lower_bound=group.release_period.lower_bound, upper_bound=group.release_period.upper_bound)
 
-        db_release_period = db.query(models.ReleasePeriod).filter(
-            models.ReleasePeriod.name == release_period.name).first()
-        db_group.release_periods.append(db_release_period)
+    db.add(db_release_period)
+    db.commit()
+    db.refresh(db_release_period)
+
+    db_group.release_period_id = db_release_period.id
 
     for genre in group.genres:
         db_genre = db.query(models.Genre).filter(

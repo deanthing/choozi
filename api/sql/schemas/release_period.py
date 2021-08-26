@@ -12,7 +12,6 @@ class ReleasePeriodGroup(BaseModel):
 
 
 class ReleasePeriodCreate(BaseModel):
-    name: str
     lower_bound: int
     upper_bound: int
 

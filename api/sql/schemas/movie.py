@@ -26,10 +26,24 @@ class MovieOut(BaseModel):
     title: str
     blurb: str
     picture_url: str
-    release_period: ReleasePeriodOut
+    release_date: str
     genres: List[GenreOut]
     group_id: int
     streaming_providers: List[StreamingProviderOut]
+
+    class Config:
+        orm_mode = True
+
+
+class MovieListCreate(BaseModel):
+    movies: List[MovieCreate]
+
+    class Config:
+        orm_mode = True
+
+
+class MovieListOut(BaseModel):
+    movies: List[MovieOut]
 
     class Config:
         orm_mode = True

@@ -11,8 +11,8 @@ from .movie import MovieCreate, MovieOut
 
 class GroupCreate(BaseModel):
     genres: List[GenreGroup]
-    release_periods: List[ReleasePeriodGroup]
     streaming_providers: List[StreamingProviderGroup]
+    release_period: ReleasePeriodCreate
 
     class Config:
         orm_mode = True
@@ -22,10 +22,10 @@ class GroupOut(BaseModel):
     id: int
     in_waiting_room: bool
     room_code: str
+    release_period: ReleasePeriodOut
     users: Optional[List[UserBase]] = None
     likes: Optional[List[LikeOut]] = None
     genres: Optional[List[GenreOut]] = None
-    release_periods: Optional[List[ReleasePeriodOut]] = None
     movies: Optional[List[MovieOut]] = None
     streaming_providers: Optional[List[StreamingProviderOut]] = None
 

@@ -10,13 +10,6 @@ group_genre_association = Table(
     Column("genre_id", ForeignKey("genre.id"), primary_key=True),
 )
 
-group_release_association = Table(
-    "groupreleaseassociation",
-    Base.metadata,
-    Column("group_id", ForeignKey("group.id"), primary_key=True),
-    Column("release_id", ForeignKey("releaseperiod.id"), primary_key=True),
-)
-
 
 group_providers_association = Table(
     "groupprovidersassociation",
@@ -31,10 +24,10 @@ class Group(Base):
     id = Column(Integer, primary_key=True)
     users = relationship("User", backref="group", lazy=True)
     likes = relationship("Like", backref="group", lazy=True)
+    release_period_id = Column(Integer, ForeignKey("releaseperiod.id"))
+    release_period = relationship("ReleasePeriod")
     genres = relationship(
         "Genre", secondary=group_genre_association, overlaps="genres")
-    release_periods = relationship(
-        "ReleasePeriod", secondary=group_release_association)
     streaming_providers = relationship(
         "StreamingProvider", secondary=group_providers_association)
     in_waiting_room = Column(Boolean, nullable=False)
@@ -105,8 +98,7 @@ class Movie(Base):
     title = Column(String(80))
     blurb = Column(String(500))
     picture_url = Column(String(80))
-    release_period_id = Column(Integer, ForeignKey("releaseperiod.id"))
-    release_period = relationship("ReleasePeriod")
+    release_date = Column(String, nullable=False)
     genres = relationship("Genre", secondary=movie_genre_association)
     likes = relationship("Like", backref="movie", lazy=True)
     group_id = Column(Integer, ForeignKey("group.id"), nullable=False)
@@ -126,9 +118,8 @@ class Genre(Base):
 class ReleasePeriod(Base):
     __tablename__ = "releaseperiod"
     id = Column(Integer, primary_key=True)
-    name = Column(String(64), unique=True, nullable=False)
-    lower_bound = Column(Integer)
-    upper_bound = Column(Integer)
+    lower_bound = Column(Integer, nullable=False)
+    upper_bound = Column(Integer, nullable=False)
 
 
 class StreamingProvider(Base):

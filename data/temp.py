@@ -77,24 +77,6 @@ def post_genres():
         print(r.status_code)
 
 
-def post_periods():
-
-    periods = []
-    periods.append({"name": "50s", "lower_bound": 1950, "upper_bound": 1959})
-    periods.append({"name": "60s", "lower_bound": 1960, "upper_bound": 1969})
-    periods.append({"name": "70s", "lower_bound": 1970, "upper_bound": 1979})
-    periods.append({"name": "80s", "lower_bound": 1980, "upper_bound": 1989})
-    periods.append({"name": "90s", "lower_bound": 1990, "upper_bound": 1999})
-    periods.append({"name": "2000s", "lower_bound": 2000, "upper_bound": 2010})
-    periods.append({"name": "2010s", "lower_bound": 2010, "upper_bound": 2019})
-    periods.append({"name": "2020s", "lower_bound": 2020, "upper_bound": 2029})
-
-    for p in periods:
-        r = requests.post("http://127.0.0.1:8000/releaseperiods", json=p)
-
-        print(r.status_code)
-
-
 def post_providers():
     PROVIDER_URL = f"https://api.themoviedb.org/3/watch/providers/movie?api_key={API_KEY}&language=en-US&watch_region=US"
 
@@ -109,7 +91,6 @@ def post_providers():
 
 
 post_providers()
-post_periods()
 post_genres()
 
 # print(post_movies(get_movie_ids()))
