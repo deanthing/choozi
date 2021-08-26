@@ -30,6 +30,4 @@ def create_release_period(db: Session, release_period: ReleasePeriodCreate):
     db.commit()
     db.refresh(db_release_period)
 
-    print(db_release_period.__dict__)
-
     return release_period

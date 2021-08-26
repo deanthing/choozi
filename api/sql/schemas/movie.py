@@ -1,4 +1,5 @@
-from sql.schemas.genre import GenreCreate, GenreOut
+from .streaming_provider import StreamingProviderGroup, StreamingProviderOut
+from sql.schemas.genre import GenreCreate, GenreOut, GenreGroup
 from sql.schemas.release_period import ReleasePeriodOut
 from typing import List, Optional
 
@@ -11,7 +12,9 @@ class MovieCreate(BaseModel):
     blurb: str
     picture_url: str
     release_date: str
-    genres: List[GenreCreate]
+    genres: List[GenreGroup]
+    group_id: int
+    streaming_providers: List[StreamingProviderGroup]
 
     class Config:
         orm_mode = True
@@ -25,6 +28,8 @@ class MovieOut(BaseModel):
     picture_url: str
     release_period: ReleasePeriodOut
     genres: List[GenreOut]
+    group_id: int
+    streaming_providers: List[StreamingProviderOut]
 
     class Config:
         orm_mode = True

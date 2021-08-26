@@ -18,7 +18,7 @@ def get_genres(db: Session):
 
 def create_genre(db: Session, genre: GenreCreate):
     db_genre = models.Genre(
-        name=genre.name)
+        name=genre.name, tmdb_id=genre.tmdb_id)
     db.add(db_genre)
     db.commit()
     db.refresh(db_genre)

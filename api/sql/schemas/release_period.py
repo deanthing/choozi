@@ -4,6 +4,13 @@ from pydantic import BaseModel
 from .user import UserBase
 
 
+class ReleasePeriodGroup(BaseModel):
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
 class ReleasePeriodCreate(BaseModel):
     name: str
     lower_bound: int

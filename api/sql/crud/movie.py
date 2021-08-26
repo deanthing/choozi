@@ -14,7 +14,7 @@ def get_movies(db: Session):
 
 def create_movie(db: Session, movie: MovieCreate):
     db_movie = models.Movie(tmdb_id=movie.tmdb_id, title=movie.title,
-                            blurb=movie.blurb, picture_url=movie.picture_url)
+                            blurb=movie.blurb, picture_url=movie.picture_url, group_id=movie.group_id)
 
     periods = db.query(models.ReleasePeriod).all()
     db_period = None
@@ -28,37 +28,32 @@ def create_movie(db: Session, movie: MovieCreate):
     if db_period is None:
         return "Error"
 
-    # get genre obj, if null, create
     genres = db.query(models.Genre).all()
     db_genres = []
-    genres_to_create = []
 
     for inp_genre in movie.genres:
-        found = False
         for g in genres:
             if g.name == inp_genre.name:
                 db_genres.append(g)
-                found = True
-        if not found:
-            genres_to_create.append(inp_genre.name)
 
-    created_genres = []
-    for i in genres_to_create:
-        db_genre_create = models.Genre(name=i)
-        db.add(db_genre_create)
-        created_genres.append(db_genre_create)
-    db.commit()
-    db.flush()
-    for row in created_genres + db_genres:
+    for row in db_genres:
         db.refresh(row)
         db_movie.genres.append(row)
+
+    streaming_providers = db.query(models.StreamingProvider).all()
+    db_providers = []
+
+    for inp_p in movie.streaming_providers:
+        for p in streaming_providers:
+            if p.name == inp_p.name:
+                db_providers.append(p)
+
+    for row in db_providers:
+        db_movie.streaming_providers.append(row)
 
     db.add(db_movie)
     db.commit()
     db.refresh(db_movie)
+
+    print(db_movie.__dict__)
     return db_movie
-
-
-# def create_list_movies(db: Session, movies):
-#     for movie in movies:
-#         create_movie(db, movie)

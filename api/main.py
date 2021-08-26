@@ -16,8 +16,9 @@ from sql.schemas.genre import GenreCreate, GenreOut
 from sql.schemas.movie import MovieCreate, MovieOut
 from sql.schemas.like import LikeCreate, LikeOut
 from sql.schemas.token import TokenUser, Settings
+from sql.schemas.streaming_provider import StreamingProviderCreate, StreamingProviderOut
 from sqlalchemy.orm import Session
-from sql.crud import user, group, release_period, genre, movie, like
+from sql.crud import user, group, release_period, genre, movie, like, streaming_provider
 from sql import models
 from sql.database import SessionLocal, engine
 
@@ -230,3 +231,28 @@ def read_like(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depen
     if db_like is None:
         raise HTTPException(status_code=404, detail="User not found")
     return db_like
+
+
+@app.post("/streamingproviders", response_model=StreamingProviderOut)
+async def create_movie(
+    provider_in: StreamingProviderCreate, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
+):
+    # Authorize.jwt_required()
+    return streaming_provider.create_streaming_provider(db=db, streaming_provider=provider_in)
+
+
+@app.get("/streamingproviders", response_model=List[StreamingProviderOut])
+def read_movies(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    # Authorize.jwt_required()
+    db_provider = streaming_provider.get_streaming_providers(db)
+    return db_provider
+
+
+@app.get("/streamingproviders/{name}", response_model=StreamingProviderOut)
+def read_movie(name: str, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    # Authorize.jwt_required()
+    db_provider = streaming_provider.get_streaming_provider_by_name(
+        db, name=name)
+    if db_provider is None:
+        raise HTTPException(status_code=404, detail="provider not found")
+    return db_provider

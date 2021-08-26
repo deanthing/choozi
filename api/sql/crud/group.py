@@ -11,10 +11,7 @@ def get_group(db: Session, id: int):
 def validate_room_code(db: Session, code: str):
     groups = db.query(models.Group).all()
     for g in groups:
-        print("real code:", g.room_code)
-        print("inp code:", code)
         if g.room_code == code:
-            print("found")
             return {"found": True, "group": g}
 
     return {"found": False, "group": None}
@@ -37,6 +34,11 @@ def create_group(db: Session, group: GroupCreate):
         db_genre = db.query(models.Genre).filter(
             models.Genre.name == genre.name).first()
         db_group.genres.append(db_genre)
+
+    for p in group.streaming_providers:
+        db_streaming_provider = db.query(models.StreamingProvider).filter(
+            models.StreamingProvider.name == p.name).first()
+        db_group.streaming_providers.append(db_streaming_provider)
 
     db.add(db_group)
     db.flush()

@@ -18,15 +18,28 @@ group_release_association = Table(
 )
 
 
+group_providers_association = Table(
+    "groupprovidersassociation",
+    Base.metadata,
+    Column("group_id", ForeignKey("group.id"), primary_key=True),
+    Column("provider_id", ForeignKey("streamingprovider.id"), primary_key=True),
+)
+
+
 class Group(Base):
     __tablename__ = "group"
     id = Column(Integer, primary_key=True)
     users = relationship("User", backref="group", lazy=True)
     likes = relationship("Like", backref="group", lazy=True)
-    genres = relationship("Genre", secondary=group_genre_association, overlaps="genres")
-    release_periods = relationship("ReleasePeriod", secondary=group_release_association)
+    genres = relationship(
+        "Genre", secondary=group_genre_association, overlaps="genres")
+    release_periods = relationship(
+        "ReleasePeriod", secondary=group_release_association)
+    streaming_providers = relationship(
+        "StreamingProvider", secondary=group_providers_association)
     in_waiting_room = Column(Boolean, nullable=False)
     room_code = Column(String(5))
+    movies = relationship("Movie", backref="movie")
 
     def __init__(self):
         if self.room_code is None:
@@ -77,6 +90,13 @@ movie_genre_association = Table(
     Column("genre_id", ForeignKey("genre.id"), primary_key=True),
 )
 
+movie_providers_association = Table(
+    "movieprovidersassociation",
+    Base.metadata,
+    Column("movie_id", ForeignKey("movie.id"), primary_key=True),
+    Column("provider_id", ForeignKey("streamingprovider.id"), primary_key=True),
+)
+
 
 class Movie(Base):
     __tablename__ = "movie"
@@ -89,13 +109,18 @@ class Movie(Base):
     release_period = relationship("ReleasePeriod")
     genres = relationship("Genre", secondary=movie_genre_association)
     likes = relationship("Like", backref="movie", lazy=True)
+    group_id = Column(Integer, ForeignKey("group.id"), nullable=False)
+    streaming_providers = relationship(
+        "StreamingProvider", secondary=movie_providers_association)
 
 
 class Genre(Base):
     __tablename__ = "genre"
     id = Column(Integer, primary_key=True)
     name = Column(String(64), unique=True)
-    movies = relationship("Movie", secondary=movie_genre_association, overlaps="genres")
+    tmdb_id = Column(Integer, unique=True)
+    movies = relationship(
+        "Movie", secondary=movie_genre_association, overlaps="genres")
 
 
 class ReleasePeriod(Base):
@@ -104,3 +129,12 @@ class ReleasePeriod(Base):
     name = Column(String(64), unique=True, nullable=False)
     lower_bound = Column(Integer)
     upper_bound = Column(Integer)
+
+
+class StreamingProvider(Base):
+    __tablename__ = "streamingprovider"
+    id = Column(Integer, primary_key=True)
+    display_priority = Column(Integer, nullable=False)
+    logo_url = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    tmdb_id = Column(Integer, nullable=False)
