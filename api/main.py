@@ -1,18 +1,21 @@
 from typing import List
+from random import sample
 from datetime import datetime, timedelta
-
+import httpx
+import asyncio
+from data.get_movies import get_movies_from_url
 from fastapi import FastAPI, Depends, HTTPException, Security, Request
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2AuthorizationCodeBearer
 
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
+import requests
 
 from sql.schemas.release_period import ReleasePeriodCreate, ReleasePeriodOut
 
 from sql.schemas.user import UserCreate, UserOut
 from sql.schemas.group import GroupCreate, GroupOut
-from sql.schemas.genre import GenreCreate, GenreOut
+from sql.schemas.genre import GenreCreate, GenreOut, GenreMovie
 from sql.schemas.movie import MovieCreate, MovieOut, MovieListOut, MovieListCreate
 from sql.schemas.like import LikeCreate, LikeOut
 from sql.schemas.token import TokenUser, Settings
@@ -114,7 +117,6 @@ def validate_code(
 ):
     # Authorize.jwt_required()
     validation = group.validate_room_code(db, code=code)
-    print("validation", validation)
     if not validation["found"]:
         raise HTTPException(status_code=404, detail="Group not found")
     return validation["group"]
@@ -264,3 +266,31 @@ def read_movie(name: str, db: Session = Depends(get_db), Authorize: AuthJWT = De
     if db_provider is None:
         raise HTTPException(status_code=404, detail="provider not found")
     return db_provider
+
+
+@app.get("/moviegen/{group_id}", response_model=MovieListOut)
+async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()):
+    # Authorize.jwt_required()
+
+    group = Session.query(models.Group).filter(
+        models.Group.id == group_id).first()
+
+    if group is None:
+        raise HTTPException(status_code=404, detail="group not found")
+
+    API_KEY = "11986ac58e6c5c686898b388b473e215"
+
+    url_base_popularity = f"https://api.themoviedb.org/3/discover/movie?api_key={API_KEY}&language=en-US&sort_by=popularity.desc&include_adult=false&page=1&vote_count.gte=1000&vote_average.gte=7&with_original_language=en&"
+    url_base_vote = f"https://api.themoviedb.org/3/discover/movie?api_key={API_KEY}&language=en-US&sort_by=vote_average.desc&include_adult=false&page=1&vote_count.gte=1000&vote_average.gte=7&with_original_language=en&"
+
+    results = []
+    popularity = await get_movies_from_url(url_base_popularity, group)
+    votes = await get_movies_from_url(url_base_vote, group)
+    out_lst = sample(list(popularity), 5) + sample(list(votes), 5)
+    movies = MovieListCreate(movies=out_lst)
+
+    return movie.create_movies(Session, movies)
+
+
+# @app.get("/moviegen/{group_id}", response_model=MovieListOut)
+# async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()):

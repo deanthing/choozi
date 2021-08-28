@@ -1,5 +1,4 @@
 import datetime
-import re
 import requests
 import gzip
 import json

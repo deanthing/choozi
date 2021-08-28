@@ -10,6 +10,8 @@ uvicorn = "*"
 python-jose = "*"
 jose = "*"
 fastapi-jwt-auth = "*"
+httpx = "*"
+asyncio = "*"
 
 [dev-packages]
 pylint = "*"

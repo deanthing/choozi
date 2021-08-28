@@ -18,13 +18,8 @@ def create_movie(db: Session, movie: MovieCreate):
 
     for inp_genre in movie.genres:
         found_genre = db.query(models.Genre).filter(
-            models.Genre.name == inp_genre.name).first()
+            models.Genre.tmdb_id == inp_genre.tmdb_id).first()
         db_movie.genres.append(found_genre)
-
-    for inp_p in movie.streaming_providers:
-        found_provider = db.query(models.StreamingProvider).filter(
-            models.StreamingProvider.name == inp_p.name).first()
-        db_movie.streaming_providers.append(found_provider)
 
     db.add(db_movie)
     db.commit()
@@ -36,7 +31,6 @@ def create_movie(db: Session, movie: MovieCreate):
 def create_movies(db: Session, movies: MovieListCreate):
     created_movies = []
     for m in movies.movies:
-        print(m)
         created_movies.append(create_movie(db, m))
 
     return {"movies": created_movies}

@@ -22,7 +22,7 @@ class GroupOut(BaseModel):
     id: int
     in_waiting_room: bool
     room_code: str
-    release_period: ReleasePeriodOut
+    release_period: Optional[ReleasePeriodOut] = None
     users: Optional[List[UserBase]] = None
     likes: Optional[List[LikeOut]] = None
     genres: Optional[List[GenreOut]] = None

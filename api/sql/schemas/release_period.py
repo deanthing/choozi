@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 from pydantic import BaseModel
-from .user import UserBase
 
 
 class ReleasePeriodGroup(BaseModel):
@@ -12,8 +11,8 @@ class ReleasePeriodGroup(BaseModel):
 
 
 class ReleasePeriodCreate(BaseModel):
-    lower_bound: int
-    upper_bound: int
+    lower_bound: Optional[int]
+    upper_bound: Optional[int]
 
     class Config:
         orm_mode = True
