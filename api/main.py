@@ -1,9 +1,8 @@
 from typing import List
 from random import sample
 from datetime import datetime, timedelta
-import httpx
-import asyncio
-from data.get_movies import get_movies_from_url
+import math
+from data.get_movies import get_movies_from_url, get_recs_from_likes, store_all_movies, store_all_movies_v2
 from fastapi import FastAPI, Depends, HTTPException, Security, Request
 from fastapi.responses import JSONResponse
 
@@ -107,7 +106,7 @@ def read_group(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depe
     # Authorize.jwt_required()
     db_group = group.get_group(db, id=id)
     if db_group is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="group not found")
     return db_group
 
 
@@ -196,10 +195,20 @@ async def create_movie(
 def read_movies(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     # Authorize.jwt_required()
     movies = movie.get_movies(db)
+    print("movie count:", len(movies))
     return movies
 
 
 @app.get("/movies/{id}", response_model=MovieOut)
+def read_movie(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    # Authorize.jwt_required()
+    db_movie = movie.get_movie(db, id=id)
+    if db_movie is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_movie
+
+
+@app.get("/movies /{id}", response_model=MovieOut)
 def read_movie(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     # Authorize.jwt_required()
     db_movie = movie.get_movie(db, id=id)
@@ -268,29 +277,42 @@ def read_movie(name: str, db: Session = Depends(get_db), Authorize: AuthJWT = De
     return db_provider
 
 
-@app.get("/moviegen/{group_id}", response_model=MovieListOut)
+@app.get("/moviegen/{group_id}", response_model=GroupOut)
 async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()):
     # Authorize.jwt_required()
-
-    group = Session.query(models.Group).filter(
-        models.Group.id == group_id).first()
+    group = movie.movie_gen(Session, group_id)
 
     if group is None:
         raise HTTPException(status_code=404, detail="group not found")
 
-    API_KEY = "11986ac58e6c5c686898b388b473e215"
-
-    url_base_popularity = f"https://api.themoviedb.org/3/discover/movie?api_key={API_KEY}&language=en-US&sort_by=popularity.desc&include_adult=false&page=1&vote_count.gte=1000&vote_average.gte=7&with_original_language=en&"
-    url_base_vote = f"https://api.themoviedb.org/3/discover/movie?api_key={API_KEY}&language=en-US&sort_by=vote_average.desc&include_adult=false&page=1&vote_count.gte=1000&vote_average.gte=7&with_original_language=en&"
-
-    results = []
-    popularity = await get_movies_from_url(url_base_popularity, group)
-    votes = await get_movies_from_url(url_base_vote, group)
-    out_lst = sample(list(popularity), 5) + sample(list(votes), 5)
-    movies = MovieListCreate(movies=out_lst)
-
-    return movie.create_movies(Session, movies)
+    return group
 
 
-# @app.get("/moviegen/{group_id}", response_model=MovieListOut)
-# async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()):
+@app.get("/movierecs/{group_id}", response_model=MovieListOut)
+async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()):
+    # get group likes
+    db_likes = Session.query(models.Like).filter(
+        models.Like.group_id == group_id).all()
+
+    if len(db_likes) == 0:
+        return 'redirect to movie gen'
+
+    recs = await get_recs_from_likes(db_likes, group_id)
+    print(recs)
+    movies = MovieListCreate(movies=recs)
+
+    # return movie.create_movies(Session, movies)
+
+
+@app.get("/movieinsert", response_model=MovieListOut)
+async def insert_movies(Session=Depends(get_db), Authorize: AuthJWT = Depends()):
+    return movie.create_movies(Session, await store_all_movies_v2(desired_movie_count=2000))
+
+
+@app.get("/deletemovies", response_model=int)
+async def delete_movies(Session=Depends(get_db), Authorize: AuthJWT = Depends()):
+    Session.query(models.Movie).delete()
+    Session.query(models.movie_genre_association).delete()
+    Session.query(models.movie_providers_association).delete()
+    Session.commit()
+    return 1

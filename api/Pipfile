@@ -12,6 +12,7 @@ jose = "*"
 fastapi-jwt-auth = "*"
 httpx = "*"
 asyncio = "*"
+iteration-utilities = "*"
 
 [dev-packages]
 pylint = "*"

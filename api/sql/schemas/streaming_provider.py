@@ -25,3 +25,10 @@ class StreamingProviderOut(StreamingProviderCreate):
 
     class Config:
         orm_mode = True
+
+
+class StreamingProviderMovieIn(BaseModel):
+    tmdb_id: int
+
+    class Config:
+        orm_mode = True

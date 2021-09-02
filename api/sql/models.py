@@ -19,6 +19,15 @@ group_providers_association = Table(
 )
 
 
+group_movie_association = Table(
+    "groupmovieassociation",
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column("group_id", ForeignKey("group.id")),
+    Column("movie_id", ForeignKey("movie.id")),
+)
+
+
 class Group(Base):
     __tablename__ = "group"
     id = Column(Integer, primary_key=True)
@@ -32,7 +41,8 @@ class Group(Base):
         "StreamingProvider", secondary=group_providers_association)
     in_waiting_room = Column(Boolean, nullable=False)
     room_code = Column(String(5))
-    movies = relationship("Movie", backref="movie")
+    movies = relationship(
+        "Movie", secondary=group_movie_association)
 
     def __init__(self):
         if self.room_code is None:
@@ -86,8 +96,9 @@ movie_genre_association = Table(
 movie_providers_association = Table(
     "movieprovidersassociation",
     Base.metadata,
-    Column("movie_id", ForeignKey("movie.id"), primary_key=True),
-    Column("provider_id", ForeignKey("streamingprovider.id"), primary_key=True),
+    Column('id', Integer, primary_key=True),
+    Column("movie_id", ForeignKey("movie.id")),
+    Column("provider_id", ForeignKey("streamingprovider.id")),
 )
 
 
@@ -101,9 +112,9 @@ class Movie(Base):
     release_date = Column(String, nullable=False)
     genres = relationship("Genre", secondary=movie_genre_association)
     likes = relationship("Like", backref="movie", lazy=True)
-    group_id = Column(Integer, ForeignKey("group.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("group.id"))
     streaming_providers = relationship(
-        "StreamingProvider", secondary=movie_providers_association)
+        "StreamingProvider", secondary=movie_providers_association, lazy=True)
 
 
 class Genre(Base):
