@@ -6,3 +6,9 @@ Trying to pick a movie to watch is hard, especially when you're with friends. Ev
 
 Tailor your groups preferences with release periods, streaming services, and genre preferences.
 
+
+# dev guide
+The API service is built in FastAPI. 
+1. To get dependencies, use pipenv inside of /api. (cd api -> pipenv shell -> pipenv install)
+2. To start the API service, inside /api run "uvicorn main:app --reload"
+3. Navigate to http://127.0.0.1:8000/docs
