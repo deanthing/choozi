@@ -37,22 +37,6 @@ def movie_gen(db: Session, group_id):
 
     return db_group
 
-    # res = qry.all()
-    # print(len(res))
-    # for i in res:
-    #     print(i.title)
-    #     for p in i.streaming_providers:
-    #         if p.tmdb_id == 10:
-    #             print("amazon")
-    #         if p.tmdb_id == 8:
-    #             print("netflix")
-    #     for g in i.genres:
-    #         if g.tmdb_id == 27:
-    #             print("Horror")
-    #         if g.tmdb_id == 28:
-    #             print("Action")
-    #     print()
-
 
 def create_movie(db: Session, movie: MovieCreate):
     db_movie = models.Movie(tmdb_id=movie.tmdb_id, title=movie.title,

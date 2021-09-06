@@ -107,6 +107,7 @@ def read_group(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depe
     db_group = group.get_group(db, id=id)
     if db_group is None:
         raise HTTPException(status_code=404, detail="group not found")
+    print("movies length:", len(db_group.movies))
     return db_group
 
 
@@ -297,9 +298,7 @@ async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: 
     if len(db_likes) == 0:
         return 'redirect to movie gen'
 
-    recs = await get_recs_from_likes(db_likes, group_id)
-    print(recs)
-    movies = MovieListCreate(movies=recs)
+    recs = await get_recs_from_likes(db_likes, group_id, Session)
 
     # return movie.create_movies(Session, movies)
 
@@ -314,5 +313,23 @@ async def delete_movies(Session=Depends(get_db), Authorize: AuthJWT = Depends())
     Session.query(models.Movie).delete()
     Session.query(models.movie_genre_association).delete()
     Session.query(models.movie_providers_association).delete()
+    Session.commit()
+    return 1
+
+
+@app.get("/deletegroup/{group_id}", response_model=int)
+async def delete_group(group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()):
+    Session.query(models.group_genre_association).filter(
+        models.group_genre_association.c.group_id == group_id).delete()
+    Session.query(models.group_providers_association).filter(
+        models.group_providers_association.c.group_id == group_id).delete()
+    Session.query(models.group_movie_association).filter(
+        models.group_movie_association.c.group_id == group_id).delete()
+    Session.query(models.Group).filter(models.Group.id == group_id).delete()
+    Session.query(models.User).filter(
+        models.User.group_id == group_id).delete()
+    Session.query(models.Like).filter(
+        models.Like.group_id == group_id).delete()
+
     Session.commit()
     return 1
