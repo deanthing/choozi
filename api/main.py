@@ -1,17 +1,13 @@
 from typing import List
-from random import sample
-from datetime import datetime, timedelta
-import math
-from data.get_movies import get_movies_from_url, get_recs_from_likes, store_all_movies, store_all_movies_v2
 from fastapi import FastAPI, Depends, HTTPException, Security, Request
 from fastapi.responses import JSONResponse
-
+from fastapi_socketio import SocketManager
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
-import requests
+
+from data.get_movies import get_recs_from_likes, store_all_movies_v2
 
 from sql.schemas.release_period import ReleasePeriodCreate, ReleasePeriodOut
-
 from sql.schemas.user import UserCreate, UserOut
 from sql.schemas.group import GroupCreate, GroupOut
 from sql.schemas.genre import GenreCreate, GenreOut, GenreMovie
@@ -27,6 +23,18 @@ from sql.database import SessionLocal, engine
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+socket_manager = SocketManager(app=app, async_mode="asgi", cors_allowed_origins="*")
+
+@app.sio.on('message')
+async def handle_join(one , two):
+    print(one, two)
+    # await app.sio.emit('connected', 'User has joined')
+
+@app.sio.on('joinRoom')
+async def handle_join(one , two):
+    print(one, two)
+    # await app.sio.emit('connected', 'User has joined')
+
 
 
 @AuthJWT.load_config
@@ -186,7 +194,9 @@ async def create_movie(
 
 @app.post("/movieslist", response_model=MovieListOut)
 async def create_movie(
-    movies_in: MovieListCreate, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
+    movies_in: MovieListCreate,
+    db: Session = Depends(get_db),
+    Authorize: AuthJWT = Depends(),
 ):
     # Authorize.jwt_required()
     return movie.create_movies(db=db, movies=movies_in)
@@ -255,10 +265,14 @@ def read_like(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depen
 
 @app.post("/streamingproviders", response_model=StreamingProviderOut)
 async def create_movie(
-    provider_in: StreamingProviderCreate, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
+    provider_in: StreamingProviderCreate,
+    db: Session = Depends(get_db),
+    Authorize: AuthJWT = Depends(),
 ):
     # Authorize.jwt_required()
-    return streaming_provider.create_streaming_provider(db=db, streaming_provider=provider_in)
+    return streaming_provider.create_streaming_provider(
+        db=db, streaming_provider=provider_in
+    )
 
 
 @app.get("/streamingproviders", response_model=List[StreamingProviderOut])
@@ -269,17 +283,20 @@ def read_movies(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 
 
 @app.get("/streamingproviders/{name}", response_model=StreamingProviderOut)
-def read_movie(name: str, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+def read_movie(
+    name: str, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()
+):
     # Authorize.jwt_required()
-    db_provider = streaming_provider.get_streaming_provider_by_name(
-        db, name=name)
+    db_provider = streaming_provider.get_streaming_provider_by_name(db, name=name)
     if db_provider is None:
         raise HTTPException(status_code=404, detail="provider not found")
     return db_provider
 
 
 @app.get("/moviegen/{group_id}", response_model=GroupOut)
-async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()):
+async def get_initial_movies(
+    group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()
+):
     # Authorize.jwt_required()
     group = movie.movie_gen(Session, group_id)
 
@@ -290,13 +307,14 @@ async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: 
 
 
 @app.get("/movierecs/{group_id}", response_model=MovieListOut)
-async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()):
+async def get_initial_movies(
+    group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()
+):
     # get group likes
-    db_likes = Session.query(models.Like).filter(
-        models.Like.group_id == group_id).all()
+    db_likes = Session.query(models.Like).filter(models.Like.group_id == group_id).all()
 
     if len(db_likes) == 0:
-        return 'redirect to movie gen'
+        return "redirect to movie gen"
 
     recs = await get_recs_from_likes(db_likes, group_id, Session)
 
@@ -305,7 +323,9 @@ async def get_initial_movies(group_id: int, Session=Depends(get_db), Authorize: 
 
 @app.get("/movieinsert", response_model=MovieListOut)
 async def insert_movies(Session=Depends(get_db), Authorize: AuthJWT = Depends()):
-    return movie.create_movies(Session, await store_all_movies_v2(desired_movie_count=2000))
+    return movie.create_movies(
+        Session, await store_all_movies_v2(desired_movie_count=2000)
+    )
 
 
 @app.get("/deletemovies", response_model=int)
@@ -318,18 +338,21 @@ async def delete_movies(Session=Depends(get_db), Authorize: AuthJWT = Depends())
 
 
 @app.get("/deletegroup/{group_id}", response_model=int)
-async def delete_group(group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()):
+async def delete_group(
+    group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()
+):
     Session.query(models.group_genre_association).filter(
-        models.group_genre_association.c.group_id == group_id).delete()
+        models.group_genre_association.c.group_id == group_id
+    ).delete()
     Session.query(models.group_providers_association).filter(
-        models.group_providers_association.c.group_id == group_id).delete()
+        models.group_providers_association.c.group_id == group_id
+    ).delete()
     Session.query(models.group_movie_association).filter(
-        models.group_movie_association.c.group_id == group_id).delete()
+        models.group_movie_association.c.group_id == group_id
+    ).delete()
     Session.query(models.Group).filter(models.Group.id == group_id).delete()
-    Session.query(models.User).filter(
-        models.User.group_id == group_id).delete()
-    Session.query(models.Like).filter(
-        models.Like.group_id == group_id).delete()
+    Session.query(models.User).filter(models.User.group_id == group_id).delete()
+    Session.query(models.Like).filter(models.Like.group_id == group_id).delete()
 
     Session.commit()
     return 1

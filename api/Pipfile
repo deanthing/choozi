@@ -6,13 +6,15 @@ name = "pypi"
 [packages]
 fastapi = "*"
 sqlalchemy = "*"
-uvicorn = "*"
+uvicorn = {extras = ["standard"], version = "*"}
 python-jose = "*"
 jose = "*"
 fastapi-jwt-auth = "*"
 httpx = "*"
 asyncio = "*"
 iteration-utilities = "*"
+fastapi-socketio = "*"
+
 
 [dev-packages]
 pylint = "*"
