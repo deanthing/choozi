@@ -1,0 +1,51 @@
+<p>prefs works!</p>
+<ng-multiselect-dropdown
+  [placeholder]="'Choose Genres'"
+  [settings]="genreDropdownSettings"
+  [data]="genreDropdownList"
+  [(ngModel)]="genreSelectedItems"
+  [ngModelOptions]="{ standalone: true }"
+>
+</ng-multiselect-dropdown>
+<ng-multiselect-dropdown
+  [placeholder]="'Choose Streaming Services'"
+  [settings]="streamingDropdownSettings"
+  [data]="streamingDropdownList"
+  [(ngModel)]="streamingSelectedItems"
+  [ngModelOptions]="{ standalone: true }"
+>
+</ng-multiselect-dropdown>
+<form [formGroup]="form" (ngSubmit)="onStart()">
+  <div class="form-group">
+    <label for="yearText">Year</label>
+    <input
+      id="yearText"
+      formControlName="yearText"
+      type="text"
+      placeholder="2018"
+    />
+
+    <div>
+      <input
+        id="before"
+        type="radio"
+        value="before"
+        formControlName="yearBeforeAfter"
+      />
+      <label for="before">Before</label>
+    </div>
+
+    <div>
+      <input
+        id="after"
+        type="radio"
+        value="after"
+        name="yearBeforeAfter"
+        formControlName="yearBeforeAfter"
+      />
+      <label for="after">After</label>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" type="submit">Submit</button>
+</form>
