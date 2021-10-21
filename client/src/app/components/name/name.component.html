@@ -3,8 +3,8 @@
 <form [formGroup]="form" (ngSubmit)="onStart()">
   <div class="form-group">
     <label for="name">Name</label>
-    <input id="name" formControlName="name" type="text" />
+    <input id="name" formControlName="name" type="text" required />
   </div>
-
+  <div *ngIf="nameNull">Name is required.</div>
   <button class="btn btn-primary" type="submit">Submit</button>
 </form>

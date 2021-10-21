@@ -3,7 +3,7 @@ from sql.schemas.like import LikeOut
 from typing import List, Optional
 
 from pydantic import BaseModel
-from .user import UserBase
+from .user import UserBase, UserOut
 from .genre import GenreCreate, GenreGroup, GenreOut
 from .release_period import ReleasePeriodCreate, ReleasePeriodGroup, ReleasePeriodOut
 from .movie import MovieCreate, MovieOut
@@ -23,7 +23,7 @@ class GroupOut(BaseModel):
     in_waiting_room: bool
     room_code: str
     release_period: Optional[ReleasePeriodOut] = None
-    users: Optional[List[UserBase]] = None
+    users: Optional[List[UserOut]] = None
     likes: Optional[List[LikeOut]] = None
     genres: Optional[List[GenreOut]] = None
     movies: Optional[List[MovieOut]] = None

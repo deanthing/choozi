@@ -18,7 +18,7 @@ class UserCreate(UserBase):
 
 class UserOut(UserBase):
     id: int
-    group_id: int
+    # group_id: int
 
     class Config:
         orm_mode = True

@@ -1,2 +1,9 @@
 <p>code works!</p>
-<code-input (codeCompleted)="onCodeCompleted($event)"> </code-input>
+<code-input
+  (codeChanged)="onCodeChanged($event)"
+  (codeCompleted)="onCodeCompleted($event)"
+  [code]="pinCode"
+>
+</code-input>
+
+<p>{{ errorText }}</p>

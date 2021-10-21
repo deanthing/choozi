@@ -1,4 +1,9 @@
 <h1>Waiting Room</h1>
 <h2>Entry Code {{ entryCode }}</h2>
 <h2>Entry link {{ entryLink }}</h2>
-`
+
+<ul>
+  <li *ngFor="let user of this.usersJoined">
+    {{ user.name }} <a (click)="removeUser(user)">REMOVEUSER</a>
+  </li>
+</ul>

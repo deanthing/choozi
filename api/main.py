@@ -1,14 +1,15 @@
 from typing import List
+import json
 from fastapi import FastAPI, Depends, HTTPException, Security, Request
 from fastapi.responses import JSONResponse
 from fastapi_socketio import SocketManager
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
+from fastapi.middleware.cors import CORSMiddleware
 
 from data.get_movies import get_recs_from_likes, store_all_movies_v2
-
 from sql.schemas.release_period import ReleasePeriodCreate, ReleasePeriodOut
-from sql.schemas.user import UserCreate, UserOut
+from sql.schemas.user import UserCreate, UserOut, UserBase
 from sql.schemas.group import GroupCreate, GroupOut
 from sql.schemas.genre import GenreCreate, GenreOut, GenreMovie
 from sql.schemas.movie import MovieCreate, MovieOut, MovieListOut, MovieListCreate
@@ -23,18 +24,36 @@ from sql.database import SessionLocal, engine
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-socket_manager = SocketManager(app=app, async_mode="asgi", cors_allowed_origins="*")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['http://localhost:4200'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+socket_manager = SocketManager(app=app, async_mode="asgi", cors_allowed_origins=[])
 
 @app.sio.on('message')
 async def handle_join(one , two):
     print(one, two)
-    # await app.sio.emit('connected', 'User has joined')
 
 @app.sio.on('joinRoom')
-async def handle_join(one , two):
-    print(one, two)
-    # await app.sio.emit('connected', 'User has joined')
+async def handle_join(socket_id , data):
+    print("join room called")
+    print(data)
+    print(socket_id)
+    app.sio.enter_room(
+        sid=socket_id, 
+        room=str(data['group_id'])
+    )
 
+    await app.sio.emit(
+        event="joinRoom",
+        data=json.dumps({"id": data['user_id'], "name": data['name']}), 
+        to=str(data['group_id'])
+    )
 
 
 @AuthJWT.load_config
@@ -94,6 +113,21 @@ def read_user(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depen
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
+@app.delete("/users/{id}", response_model=UserOut)
+async def delete_user(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    # Authorize.jwt_required() 
+    db_deleted_user = user.delete_user(db, user_id=id)
+    if db_deleted_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+
+    await app.sio.emit(
+        event="joinRoom",
+        data=json.dumps({"id": db_deleted_user.id, "name": user.name}), 
+        to=str(user.groupd_id)
+    )
+    
+    return db_deleted_user
 
 @app.post("/groups", response_model=GroupOut)
 async def create_group(

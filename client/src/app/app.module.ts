@@ -12,6 +12,7 @@ import { SocketService } from './services/socket/socket.service';
 import { CodeInputModule } from 'angular-code-input';
 import { NgMultiSelectDropDownModule } from 'ng-multiselect-dropdown';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [
@@ -38,6 +39,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
     }),
     NgMultiSelectDropDownModule.forRoot(),
     ReactiveFormsModule,
+    HttpClientModule,
   ],
   providers: [SocketService],
   bootstrap: [AppComponent],

@@ -1,8 +1,8 @@
-export interface IUserOut {
-  name: string;
+export interface IUser {
+  name?: string;
   group_id?: number;
   is_owner?: boolean;
-  id?: string;
+  id?: number;
   token?: string;
 }
 
@@ -14,38 +14,33 @@ export interface IUserIn {
   token?: string;
 }
 
-interface IStreamingProviderOut {
+interface IStreamingProvider {
   name: string;
+  display_priority?: number;
+  logo_url?: string;
+  tmdb_id?: number;
 }
-interface IGenreOut {
+export interface IGenre {
   name: string;
+  tmdb_id?: number;
+  id?: number;
 }
-interface IReleasePeriodOut {
+
+export interface IReleasePeriod {
   lower_bound: number;
   upper_bound: number;
 }
 
-interface IStreamingProviderIn {
-  display_priority: number;
-  logo_url: string;
-  tmdb_id: number;
-  name: string;
-}
-interface IGenreIn {
-  name: string;
-  tmdb_id: number;
-  id: number;
-}
-interface IReleasePeriodIn {
-  lower_bound: number;
-  upper_bound: number;
-  id: number;
-}
-
-export interface IGroupOut {
-  genres: IGenreOut[];
-  streaming_provider: IStreamingProviderOut[];
-  release_period: IReleasePeriodOut[];
+export interface IGroup {
+  id?: number;
+  in_waiting_room?: boolean;
+  room_code?: string;
+  streaming_providers?: IStreamingProvider[];
+  users?: IUserIn[];
+  release_period?: IReleasePeriod;
+  likes?: ILike[];
+  genres?: IGenre[];
+  movies?: IMovie[];
 }
 
 export interface IMovie {
@@ -55,8 +50,8 @@ export interface IMovie {
   blurb: string;
   picture_url: string;
   release_date: string;
-  streaming_providers: IStreamingProviderIn[];
-  genres: IGenreIn[];
+  streaming_providers: IStreamingProvider[];
+  genres: IGenre[];
 }
 
 interface ILike {
@@ -65,13 +60,14 @@ interface ILike {
   id: number;
 }
 
-export interface IGroupIn {
-  id: number;
-  in_waiting_room: boolean;
-  room_code: string;
-  users: IUserIn[];
-  release_period: IReleasePeriodIn[];
-  likes: ILike[];
-  genres: IGenreIn[];
-  movies: IMovie[];
+export interface IGroupIn {}
+
+export interface IDropDownItem {
+  item_id: number;
+  name: string;
+}
+
+export interface IUserCreateRes {
+  token: string;
+  user: IUser;
 }

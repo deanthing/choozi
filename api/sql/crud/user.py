@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from .. import models
-from ..schemas.user import UserCreate
+from ..schemas.user import UserCreate, UserBase
 
 
 def get_user(db: Session, id: int):
@@ -22,4 +22,10 @@ def create_user(db: Session, user: UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    return db_user
+
+def delete_user(db: Session, user_id: id):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    db.delete(db_user)
+    db.commit()
     return db_user
