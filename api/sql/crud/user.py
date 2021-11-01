@@ -29,3 +29,8 @@ def delete_user(db: Session, user_id: id):
     db.delete(db_user)
     db.commit()
     return db_user
+
+def delete_users(db: Session):
+    deleted_count = db.query(models.User).delete()
+    db.commit()
+    return deleted_count

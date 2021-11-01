@@ -20,6 +20,11 @@ def validate_room_code(db: Session, code: str):
 def get_groups(db: Session):
     return db.query(models.Group).all()
 
+def delete_group(db: Session):
+    count = db.query(models.Group).delete()
+    db.commit()
+    return count
+
 
 def create_group(db: Session, group: GroupCreate):
     db_group = models.Group()

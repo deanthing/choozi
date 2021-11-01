@@ -8,11 +8,6 @@ import { StateService } from 'src/app/services/state/state.service';
 import { IUser } from 'src/models/userData';
 import { map } from 'rxjs/operators';
 
-interface IWaitingRoomUser {
-  id: number;
-  name: string;
-}
-
 @Component({
   selector: 'app-waiting',
   templateUrl: './waiting.component.html',
@@ -21,7 +16,9 @@ interface IWaitingRoomUser {
 export class WaitingComponent implements OnInit {
   entryCode: string = '';
   entryLink: string = '';
-  usersJoined: IWaitingRoomUser[] = [];
+  usersJoined: IUser[] = [];
+  isOwner?: boolean;
+  userId?: number;
   constructor(
     private apiService: ApiService,
     private router: Router,
@@ -29,6 +26,8 @@ export class WaitingComponent implements OnInit {
     private socketService: SocketService
   ) {
     this.reRoute();
+    this.isOwner = this.stateService.user?.is_owner;
+    this.userId = this.stateService.user?.id;
   }
 
   ngOnInit() {
@@ -37,8 +36,12 @@ export class WaitingComponent implements OnInit {
     this.initSockets();
   }
 
-  removeUser(user: IWaitingRoomUser) {
-    this.apiService.deleteData('users', user.id);
+  removeUser(user: IUser) {
+    console.log(user);
+    this.socketService.emit('deleteUser', JSON.stringify(user));
+    this.apiService
+      .deleteData('users', user.id)
+      .subscribe(() => console.log('deleted user'));
   }
 
   initSockets() {
@@ -49,26 +52,69 @@ export class WaitingComponent implements OnInit {
           return JSON.parse(user);
         })
       )
-      .subscribe((user: IWaitingRoomUser) => {
+      .subscribe((user: IUser) => {
+        console.log(user.id + ' ' + this.stateService.user?.id);
         if (user.id != this.stateService.user?.id) {
-          this.usersJoined.push({ id: user.id, name: user.name });
+          this.usersJoined.push(user);
         }
       });
 
     this.socketService
       .recieveEmit('removeUser')
-      .pipe(
-        map((user: any) => {
-          return JSON.parse(user);
-        })
-      )
-      .subscribe((user: IWaitingRoomUser) => {
-        if (user.id != this.stateService.user?.id) {
-          this.usersJoined.push({ id: user.id, name: user.name });
+      // .pipe(
+      //   map((user: any) => {
+      //     return JSON.parse(user);
+      //   })
+      // )
+      .subscribe((user: IUser) => {
+        console.log('removeUser socket call for', user);
+        if (user.id == this.stateService.user?.id) {
+          this.socketService.emit('removeMe', user);
+          this.stateService.resetState();
+          this.router.navigateByUrl('/');
+          console.log('remove this user');
+        } else {
+          this.usersJoined = this.usersJoined.filter(
+            (userToRemove) => userToRemove.id == this.stateService.user?.id
+          );
+
+          if (this.stateService.group?.users) {
+            this.stateService.group!.users =
+              this.stateService.group.users.filter(
+                () => user.id != this.stateService.user?.id
+              );
+          }
         }
+      });
+
+    this.socketService
+      .recieveEmit('roomClosed')
+      // .pipe(
+      //   map((user: any) => {
+      //     return JSON.parse(user);
+      //   })
+      // )
+      .subscribe((data) => {
+        this.stateService.resetState();
+        this.router.navigateByUrl('/');
       });
   }
 
+  leaveRoom() {
+    let user = this.stateService.user!;
+    this.socketService.emit('deleteUser', JSON.stringify(user));
+    this.apiService
+      .deleteData('users', user.id)
+      .subscribe(() => console.log('deleted user'));
+  }
+  closeRoom() {
+    // post delete group
+    this.apiService
+      .getData('deletegroup', this.stateService.group!.id)
+      .subscribe(() => console.log('group deleted'));
+    // emit close room
+    this.socketService.emit('closeRoom', this.stateService.group!.id);
+  }
   loadUsers() {
     this.apiService
       .getData('groups', this.stateService.group?.id)
@@ -81,7 +127,7 @@ export class WaitingComponent implements OnInit {
       .subscribe((res) => {
         console.log(res.users);
         this.stateService.group = res;
-        const users: IWaitingRoomUser[] = res.users.map((user: any) => {
+        const users: IUser[] = res.users.map((user: any) => {
           console.log('user in for loop', user);
           return { name: user.name, id: user.id };
         });

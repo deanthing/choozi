@@ -51,10 +51,32 @@ async def handle_join(socket_id , data):
 
     await app.sio.emit(
         event="joinRoom",
-        data=json.dumps({"id": data['user_id'], "name": data['name']}), 
+        data=json.dumps(data), 
         to=str(data['group_id'])
     )
 
+@app.sio.on('deleteUser')
+async def delete_user(socket_id, data):
+    data = json.loads(data)
+    await app.sio.emit(
+        event="removeUser",
+        data=data, 
+        to=str(data['group_id'])
+    )
+@app.sio.on('removeMe')
+async def remove_me(socket_id, data):
+    app.sio.leave_room(
+        sid=socket_id, 
+        room=str(data['group_id'])
+    )
+
+@app.sio.on('closeRoom')
+async def close_room(socket_id, data):
+    await app.sio.emit(
+        event="roomClosed",
+        data=None, 
+        to=str(data)
+    )
 
 @AuthJWT.load_config
 def get_config():
@@ -119,15 +141,12 @@ async def delete_user(id: int, db: Session = Depends(get_db), Authorize: AuthJWT
     db_deleted_user = user.delete_user(db, user_id=id)
     if db_deleted_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-
-
-    await app.sio.emit(
-        event="joinRoom",
-        data=json.dumps({"id": db_deleted_user.id, "name": user.name}), 
-        to=str(user.groupd_id)
-    )
+@app.delete("/users", response_model=int)
+async def delete_users(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    # Authorize.jwt_required() 
+    db_deleted_users_count= user.delete_users(db)
     
-    return db_deleted_user
+    return db_deleted_users_count
 
 @app.post("/groups", response_model=GroupOut)
 async def create_group(
@@ -142,6 +161,14 @@ def read_groups(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     groups = group.get_groups(db)
     return groups
 
+@app.delete("/groups", response_model=int)
+def read_groups(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    # Authorize.jwt_required()
+    groups = group.delete_group(db)
+    return groups
+
+
+@app.get("/groups/{id}", response_model=GroupOut)
 
 @app.get("/groups/{id}", response_model=GroupOut)
 def read_group(id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):

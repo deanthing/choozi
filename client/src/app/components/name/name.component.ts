@@ -42,7 +42,7 @@ export class NameComponent implements OnInit {
   }
 
   postUser() {
-    let group = this.stateService.getGroup();
+    let group = this.stateService.group;
     let user = this.stateService.user;
     if (group && user) {
       let to_post_user: IUser = {
@@ -70,7 +70,7 @@ export class NameComponent implements OnInit {
     if (this.stateService.user) {
       let data = {
         group_id: this.stateService.user.group_id,
-        user_id: this.stateService.user.id,
+        id: this.stateService.user.id,
         name: this.stateService.user.name,
       };
       this.socketService.emit('joinRoom', data);

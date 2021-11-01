@@ -14,7 +14,10 @@ export class StateService {
     console.log('constructing service');
   }
 
-  getGroup() {
-    return this.group;
+  resetState() {
+    this.appPhase = '';
+    this.user = undefined;
+    this.token = undefined;
+    this.group = undefined;
   }
 }
