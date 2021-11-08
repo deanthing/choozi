@@ -1,5 +1,10 @@
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
+import { Injectable, NgModule } from '@angular/core';
+import {
+  BrowserModule,
+  HammerModule,
+  HammerGestureConfig,
+  HAMMER_GESTURE_CONFIG,
+} from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -13,6 +18,17 @@ import { CodeInputModule } from 'angular-code-input';
 import { NgMultiSelectDropDownModule } from 'ng-multiselect-dropdown';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { SwipeUiComponent } from './components/swipe/swipe-ui/swipe-ui.component';
+import { SwipeComponent } from './components/swipe/swipe.component';
+import * as Hammer from 'hammerjs';
+
+@Injectable()
+export class MyHammerConfig extends HammerGestureConfig {
+  overrides = <any>{
+    pan: { direction: Hammer.DIRECTION_HORIZONTAL, threshold: 50 },
+  };
+}
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -21,6 +37,8 @@ import { HttpClientModule } from '@angular/common/http';
     NameComponent,
     CodeComponent,
     WaitingComponent,
+    SwipeUiComponent,
+    SwipeComponent,
   ],
   imports: [
     BrowserModule,
@@ -31,6 +49,7 @@ import { HttpClientModule } from '@angular/common/http';
       { path: 'name', component: NameComponent },
       { path: 'code', component: CodeComponent },
       { path: 'waitingroom', component: WaitingComponent },
+      { path: 'swipe', component: SwipeComponent },
     ]),
     CodeInputModule.forRoot({
       codeLength: 3,
@@ -39,8 +58,15 @@ import { HttpClientModule } from '@angular/common/http';
     NgMultiSelectDropDownModule.forRoot(),
     ReactiveFormsModule,
     HttpClientModule,
+    HammerModule,
   ],
-  providers: [SocketService],
+  providers: [
+    SocketService,
+    {
+      provide: HAMMER_GESTURE_CONFIG,
+      useClass: MyHammerConfig,
+    },
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

@@ -32,6 +32,9 @@ export class LandingComponent implements OnInit {
     // console.log('objecclickt');
     // this.socketService.emit('joinRoom', 6969);
   }
+  onSwipe() {
+    this.router.navigateByUrl('/swipe');
+  }
 
   onCreate() {
     this.stateService.appPhase = 'prefs';
