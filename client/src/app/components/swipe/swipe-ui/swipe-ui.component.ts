@@ -34,15 +34,36 @@ export class SwipeUiComponent {
   transitionInProgress: boolean; // state variable that indicates currently there is transition on-going
   heartVisible: boolean;
   crossVisible: boolean;
-  imageBase: string = 'https://image.tmdb.org/t/p/w300';
+  imageBase: string = 'https://image.tmdb.org/t/p/w400';
 
+  mousePosition = {
+    x: 0,
+    y: 0,
+  };
+
+  showDetail: boolean;
   constructor(private renderer: Renderer2) {
     this.moveOutWidth = document.documentElement.clientWidth * 1.5;
     this.shiftRequired =
       this.transitionInProgress =
       this.heartVisible =
       this.crossVisible =
+      this.showDetail =
         false;
+  }
+
+  cardClick($event: any) {
+    if (
+      this.mousePosition.x === $event.screenX &&
+      this.mousePosition.y === $event.screenY
+    ) {
+      this.showDetail = !this.showDetail;
+    }
+  }
+
+  mouseDown($event: any) {
+    this.mousePosition.x = $event.screenX;
+    this.mousePosition.y = $event.screenY;
   }
 
   userClickedButton(event: any, heart: boolean) {
@@ -76,10 +97,6 @@ export class SwipeUiComponent {
       !this.cards.length
     )
       return;
-
-    // if (this.transitionInProgress) {
-    //   this.handleShift();
-    // }
 
     this.renderer.addClass(this.tinderCardsArray[0].nativeElement, 'moving');
 
@@ -117,9 +134,6 @@ export class SwipeUiComponent {
     this.renderer.removeClass(this.tinderCardsArray[0].nativeElement, 'moving');
 
     let keep = Math.abs(event.deltaX) < 80;
-    // console.log(
-    //   'panend: x change:' + event.deltaX + ' velocityX:' + event.velocity
-    // );
 
     if (keep) {
       this.renderer.setStyle(
@@ -157,6 +171,7 @@ export class SwipeUiComponent {
       this.emitChoice(!!(event.deltaX > 0), this.cards[0]);
     }
     // this.transitionInProgress = true;
+    this.showDetail = false;
   }
 
   toggleChoiceIndicator(cross: boolean, heart: boolean) {
@@ -174,7 +189,6 @@ export class SwipeUiComponent {
   }
 
   emitChoice(heart: boolean, card: IMovie) {
-    console.log(heart ? 'like' : 'nope', ' card:', card);
     this.choiceMade.emit({
       choice: heart,
       payload: card,

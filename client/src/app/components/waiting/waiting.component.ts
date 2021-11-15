@@ -5,7 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { ApiService } from 'src/app/services/api/api.service';
 import { SocketService } from 'src/app/services/socket/socket.service';
 import { StateService } from 'src/app/services/state/state.service';
-import { IUser } from 'src/models/userData';
+import { IGroup, IUser } from 'src/models/userData';
 import { map } from 'rxjs/operators';
 
 @Component({
@@ -34,6 +34,19 @@ export class WaitingComponent implements OnInit {
     this.initEntryInformation();
     this.loadUsers();
     this.initSockets();
+    this.generateMovies();
+  }
+
+  generateMovies() {
+    // gen movies
+    if (this.stateService.user?.is_owner) {
+      this.apiService
+        .getData('moviegen', this.stateService.group!.id)
+        .subscribe((group: IGroup) => {
+          console.log('movies generated');
+          this.stateService.group = group;
+        });
+    }
   }
 
   removeUser(user: IUser) {
@@ -150,8 +163,8 @@ export class WaitingComponent implements OnInit {
   }
 
   onStartRound() {
-    this.stateService.appPhase = 'waitingroom';
-    this.router.navigateByUrl('/round');
+    this.stateService.appPhase = 'swipe';
+    this.router.navigateByUrl('/swipe');
   }
 
   reRoute() {

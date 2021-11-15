@@ -22,11 +22,26 @@ def movie_gen(db: Session, group_id):
     # filtering to match providers
     genre_ids = [genre.tmdb_id for genre in db_group.genres]
     prov_ids = [prov.tmdb_id for prov in db_group.streaming_providers]
-    movies_for_group = db.query(models.Movie).filter(
-        models.Movie.streaming_providers.any(
-            models.StreamingProvider.tmdb_id.in_(prov_ids)),
-        models.Movie.genres.any(models.Genre.tmdb_id.in_(genre_ids))
-    )
+
+    movies_for_group = []
+
+    # query based on if the groups preferences have selected any filters or not 
+    if not genre_ids and not prov_ids:
+        movies_for_group = db.query(models.Movie).limit(50).all()
+    elif not genre_ids and prov_ids:
+        movies_for_group = db.query(models.Movie).filter(
+            models.Movie.streaming_providers.any(models.StreamingProvider.tmdb_id.in_(prov_ids))
+        )
+    elif not prov_ids and genre_ids:
+        movies_for_group = db.query(models.Movie).filter(
+            models.Movie.genres.any(models.Genre.tmdb_id.in_(genre_ids))
+        )
+    elif prov_ids and genre_ids:
+        movies_for_group = db.query(models.Movie).filter(
+            models.Movie.streaming_providers.any(models.StreamingProvider.tmdb_id.in_(prov_ids)),
+            models.Movie.genres.any(models.Genre.tmdb_id.in_(genre_ids))
+        )
+
 
     for movie in movies_for_group:
         db_group.movies.append(movie)
@@ -50,7 +65,7 @@ def create_movie(db: Session, movie: MovieCreate):
     for inp_prov in movie.streaming_providers:
         found_prov = db.query(models.StreamingProvider).filter(
             models.StreamingProvider.tmdb_id == inp_prov.tmdb_id).first()
-        db_movie.streaming_providers.append(found_prov)
+        if found_prov: db_movie.streaming_providers.append(found_prov)
 
     db.add(db_movie)
     db.commit()

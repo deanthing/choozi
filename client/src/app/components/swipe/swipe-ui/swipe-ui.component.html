@@ -36,20 +36,34 @@
       #tinderCard
       class="tinder--card"
       (transitionend)="handleShift()"
+      (click)="cardClick($event)"
+      (mousedown)="mouseDown($event)"
       *ngFor="let card of cards; let i = index"
       [ngStyle]="{
         zIndex: cards.length - i,
-        transform: 'scale(' + (20 - i) / 20 + ') translateY(-' + 20 * i + 'px)'
+        transform: 'scale(' + (20 - i) / 20 + ') translateY(-' + 30 * i + 'px)',
+        backgroundImage: 'url(' + imageBase + card.picture_url + ')'
       }"
+      [ngClass]="{ 'tinder--card--detail': i == 0 && showDetail }"
     >
-      <img
-        #tinderCardImage
-        [src]="imageBase + card.picture_url"
-        (load)="tinderCardImage.style.opacity = '1'"
-        class="cover-image"
-      />
-      <h3>{{ card.title }}</h3>
-      <p>{{ card.blurb }}</p>
+      <p class="info-symbol">INFO</p>
+      <div *ngIf="showDetail">
+        <h3 class="info-text">{{ card.title }}</h3>
+        <p class="info-text">{{ card.blurb }}</p>
+        <p class="info-text">{{ card.release_date }}</p>
+        <p class="info-text">Genres</p>
+        <ul>
+          <li *ngFor="let genre of card.genres">
+            {{ genre.name }}
+          </li>
+        </ul>
+        <p class="info-text">Providers</p>
+        <ul>
+          <li *ngFor="let provider of card.streaming_providers">
+            {{ provider.name }}
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 

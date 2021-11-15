@@ -71,3 +71,8 @@ export interface IUserCreateRes {
   token: string;
   user: IUser;
 }
+
+export interface ILikeCreate {
+  group_id: number;
+  movie_id: number;
+}

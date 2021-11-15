@@ -97,6 +97,7 @@ async def initial_query(url: str):
 
 
 def convert_movies_to_schema_v2(r: list):  # for movie detail pattern
+    print("length of movies coming in to convert:", len(r))
     movies_to_insert = []
     for movie_json in r:
 
@@ -123,11 +124,10 @@ def convert_movies_to_schema_v2(r: list):  # for movie detail pattern
             release_date=movie_json['release_date'],
             genres=genres_to_insert,
             streaming_providers=providers_to_insert
-
         )
 
         movies_to_insert.append(movie_schema)
-    print(len(movies_to_insert))
+    print("number inserted", len(movies_to_insert))
     return MovieListCreate(movies=movies_to_insert)
 
 
@@ -167,126 +167,99 @@ async def store_all_movies_v2(desired_movie_count):
 
     return convert_movies_to_schema_v2(pulled_movies)
 
-
-async def store_all_movies(desired_movie_count):
-    providers = ["8|119", "8", "337", "2",
-                 "15", "531", "384", "386", "350", "27"]
-    page_num = 1
-    url_base_popularity = "https://api.themoviedb.org/3/discover/movie?api_key={0}&language=en-US&sort_by=popularity.desc&include_adult=false&page={1}&vote_count.gte=1000&vote_average.gte=7&with_original_language=en&"
-    url_base_vote = "https://api.themoviedb.org/3/discover/movie?api_key={0}&language=en-US&sort_by=vote_average.desc&include_adult=false&page={1}&vote_count.gte=1000&vote_average.gte=7&with_original_language=en&"
-
-    init_pop_url = url_base_popularity.format(API_KEY, page_num)
-    init_vote_url = url_base_vote.format(API_KEY, page_num)
-
-    pop_init_query = await initial_query(init_pop_url)
-    vote_init_query = await initial_query(init_vote_url)
-
-    res_per_page = 20
-
-    movies_tmdb = pop_init_query["results"] + vote_init_query["results"]
-
-    # if pop_init_query["total_results"] + vote_init_query["total_results"] >= desired_movie_count:
-    # divide by 2 because two pages
-
-    pages_needed_per_link = math.ceil(
-        (desired_movie_count / (2 * len(providers))) / (res_per_page))
-    for page_num in range(2, pages_needed_per_link + 1):
-        for provider in providers:
-
-            async with httpx.AsyncClient() as client:
-                r_popularity = await client.get(url_base_popularity.format(API_KEY, page_num) + "with_watch_providers=" + provider)
-                r_votes = await client.get(url_base_vote.format(API_KEY, page_num) + "with_watch_providers=" + provider)
-
-            movies_tmdb += r_popularity.json()["results"] + \
-                r_votes.json()["results"]
-
-    print(len(movies_tmdb))
-    movies_tmdb = list(unique_everseen(movies_tmdb))
-    print(len(movies_tmdb))
-    # mov_schema = convert_movie_to_schema(movies_tmdb)
-    # print(mov_schema)
-    return convert_movie_to_schema(movies_tmdb)
-
-
 async def get_recs_from_likes(db_likes: list, group_id: int, db: session):
 
-    recs_per_like = math.ceil(10 / len(db_likes))
-
+    recs_per_like = math.ceil(40 / len(db_likes))
     rec_movies = []
 
     db_likes = db.query(models.Like).filter(
-        models.Like.group_id == group_id).all()
+        models.Like.group_id == group_id).distinct(models.Like.movie_id).all()
 
+    # get tmdb ids from my own ids
+    tmdb_like_ids = []
+    for like in db_likes:
+        movie = db.query(models.Movie).filter(models.Movie.id == like.movie_id).first()
+        tmdb_like_ids.append(movie.tmdb_id)
+    
     db_group = db.query(models.Group).filter(
         models.Group.id == group_id).first()
 
     async def get_recs_for_movie(client, id):
         base_url = "https://api.themoviedb.org/3/movie/{0}/recommendations?api_key={1}&language=en-US&page=1"
         r = await client.get(base_url.format(id, API_KEY), timeout=None)
-        await asyncio.sleep(0.2)
+        # await asyncio.sleep(0.2)
         return (r.json(), id)
 
     async with httpx.AsyncClient() as client:
-        recs = await asyncio.gather(*[get_recs_for_movie(client, like.movie_id) for like in db_likes])
+        recs = await asyncio.gather(*[get_recs_for_movie(client, like) for like in tmdb_like_ids])
 
     async def pull_subsequent_pages(client, id, page):
         base_url = "https://api.themoviedb.org/3/movie/{0}/recommendations?api_key={1}&language=en-US&page={2}"
         r = await client.get(base_url.format(id, API_KEY, page), timeout=None)
-        await asyncio.sleep(0.2)
+        # await asyncio.sleep(0.2)
         return r.json()
+
+    # format recs
     all_recs = []
     for rec_page in recs:
         if rec_page[0]["total_pages"] > 1:
             async with httpx.AsyncClient() as client:
-                recs = await asyncio.gather(*[pull_subsequent_pages(client, rec_page[1], page) for page in range(1, rec_page[0]["total_pages"]+1)])
-                all_recs.append(recs)
+                recs_subsequent = await asyncio.gather(*[pull_subsequent_pages(client, rec_page[1], page) for page in range(1, rec_page[0]["total_pages"]+1)])
+                all_recs.append(recs_subsequent)
+
+    
 
     # get movies to pull and check movies in db
     movies_to_pull = []
     movies_to_display_json = []
     movies_to_display_in_db = []
 
-    for rec_page in recs:
-        for movie in rec_page["results"]:
-            db_movie = db.query(models.Movie).filter(
-                models.Movie.tmdb_id == movie["id"]).first()
-            # when rec movie is already in db
-            if db_movie:
+    for set_of_rec_pages in all_recs:
+        for rec_page in set_of_rec_pages:
+            # proceses movies
+            for movie in rec_page["results"]:
+                db_movie = db.query(models.Movie).filter(
+                    models.Movie.tmdb_id == movie["id"]).first()
+                # when rec movie is already in db
+                if db_movie:
+                    # get providers of current movie
+                    movie_providers = [
+                        prov.tmdb_id for prov in db_movie.streaming_providers]
 
-                # check if providers match movie
-                movie_providers = [
-                    prov.tmdb_id for prov in db_movie.streaming_providers]
-                prov_match = False
-                for prov in db_group.streaming_providers:
-                    if prov.tmdb_id in movie_providers:
-                        prov_match = True
-                        break
+                    if db_group.streaming_providers:
+                        for prov in db_group.streaming_providers:
+                            if prov.tmdb_id in movie_providers:
+                                movies_to_display_in_db.append(db_movie)
+                                break
+                    else:
+                        movies_to_display_in_db.append(db_movie)
+                else:
+                    movies_to_pull.append(movie)
 
-                if prov_match:
-                    movies_to_display_in_db.append(db_movie)
-
-            else:
-                movies_to_pull.append(movie)
-
+    # pull movies from api
     async def get_movie_detail(client, id):
         base_url = "https://api.themoviedb.org/3/movie/{0}?api_key={1}&language=en-US&append_to_response=watch/providers"
         r = await client.get(base_url.format(id, API_KEY), timeout=None)
-        await asyncio.sleep(0.2)
         return r.json()
-
     async with httpx.AsyncClient() as client:
         movies_to_check_providers = await asyncio.gather(*[get_movie_detail(client, movie["id"]) for movie in movies_to_pull])
 
+    # check providers of movies not in db
     for movie in movies_to_check_providers:
         group_provs = [prov.tmdb_id for prov in db_group.streaming_providers]
+        if group_provs:
+            if 'US' in movie['watch/providers']['results']:
+                for prov_type in movie['watch/providers']['results']['US']:
+                    if prov_type != "link":
+                        for prov in movie['watch/providers']['results']['US'][prov_type]:
+                            if prov["provider_id"] in group_provs:
+                                movies_to_display_json.append(movie)
+        else:
+            movies_to_display_json.append(movie)
 
-        if 'US' in movie['watch/providers']['results']:
-            for prov_type in movie['watch/providers']['results']['US']:
-                if prov_type != "link":
-                    for prov in movie['watch/providers']['results']['US'][prov_type]:
-                        if prov["provider_id"] in group_provs:
-                            movies_to_display_json.append(movie)
+
     # insert movies_to_display_json into db and add to group movies
+    print("number of movies to insert from main function", len(movies_to_display_json))
     inserted_movies_from_tmdb = create_movies(db,
                                               convert_movies_to_schema_v2(
                                                   movies_to_display_json)
