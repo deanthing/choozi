@@ -25,6 +25,7 @@ class GroupOut(BaseModel):
     release_period: Optional[ReleasePeriodOut] = None
     users: Optional[List[UserOut]] = None
     likes: Optional[List[LikeOut]] = None
+    processed_likes: Optional[List[LikeOut]] = None
     genres: Optional[List[GenreOut]] = None
     movies: Optional[List[MovieOut]] = None
     streaming_providers: Optional[List[StreamingProviderOut]] = None

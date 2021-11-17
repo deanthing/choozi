@@ -1,3 +1,4 @@
+import random
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -23,9 +24,8 @@ def movie_gen(db: Session, group_id):
     genre_ids = [genre.tmdb_id for genre in db_group.genres]
     prov_ids = [prov.tmdb_id for prov in db_group.streaming_providers]
 
-    movies_for_group = []
-
     # query based on if the groups preferences have selected any filters or not 
+    movies_for_group = []
     if not genre_ids and not prov_ids:
         movies_for_group = db.query(models.Movie).limit(50).all()
     elif not genre_ids and prov_ids:
@@ -42,14 +42,15 @@ def movie_gen(db: Session, group_id):
             models.Movie.genres.any(models.Genre.tmdb_id.in_(genre_ids))
         )
 
-
-    for movie in movies_for_group:
-        db_group.movies.append(movie)
+    # get 45 random movies from sample or however many are in the sample
+    if len(movies_for_group) >= 45:
+        db_group.movies += random.sample(movies_for_group, 45)
+    else:
+        print("less than 45 movies found:",  len(movies_for_group))
+        db_group.movies += random.sample(movies_for_group, len(movies_for_group))
 
     db.commit()
-
     db.refresh(db_group)
-
     return db_group
 
 
@@ -78,5 +79,4 @@ def create_movies(db: Session, movies: MovieListCreate):
     created_movies = []
     for m in movies.movies:
         created_movies.append(create_movie(db, m))
-
     return {"movies": created_movies}

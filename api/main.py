@@ -78,6 +78,22 @@ async def close_room(socket_id, data):
         to=str(data)
     )
 
+@app.sio.on('recsInserted')
+async def close_room(socket_id, data):
+    await app.sio.emit(
+        event="newRecs",
+        data=None, 
+        to=str(data)
+    )
+
+@app.sio.on('newMovies')
+async def close_room(socket_id, data):
+    await app.sio.emit(
+        event="newMovies",
+        data=None, 
+        to=str(data)
+    )
+
 @AuthJWT.load_config
 def get_config():
     return Settings()
@@ -364,19 +380,29 @@ async def get_initial_movies(
     return group
 
 
-@app.get("/movierecs/{group_id}", response_model=MovieListOut)
+@app.get("/movierecs/{group_id}", response_model=GroupOut)
 async def get_initial_movies(
     group_id: int, Session=Depends(get_db), Authorize: AuthJWT = Depends()
 ):
     # get group likes
     db_likes = Session.query(models.Like).filter(models.Like.group_id == group_id).all()
+    db_processed_likes = Session.query(models.Like).filter(
+        models.ProcessedLike.group_id == group_id).all()
 
-    if len(db_likes) == 0:
+    likes_to_process = []
+    for db_like in db_likes:
+        already_processed = False
+        for processed_like in db_processed_likes:
+            if db_like.movie_id == processed_like.movie_id:
+                already_processed = True
+        if not already_processed:
+            likes_to_process.append(db_like)
+    
+    if len(likes_to_process) == 0:
+        print("no likes to process")
         return "redirect to movie gen"
-
-    recs = await get_recs_from_likes(db_likes, group_id, Session)
-
-    # return movie.create_movies(Session, movies)
+        
+    return await get_recs_from_likes(likes_to_process, group_id, Session)
 
 
 @app.get("/movieinsert", response_model=MovieListOut)

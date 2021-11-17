@@ -168,6 +168,15 @@ async def store_all_movies_v2(desired_movie_count):
     return convert_movies_to_schema_v2(pulled_movies)
 
 async def get_recs_from_likes(db_likes: list, group_id: int, db: session):
+    db_group = db.query(models.Group).filter(
+        models.Group.id == group_id).first()
+
+    for db_like in db_likes:
+        db_group.processed_likes.append(models.ProcessedLike(group_id=db_like.group_id, movie_id=db_like.movie_id))
+
+    db.add(db_group)
+    db.commit()
+    db.refresh(db_group)
 
     recs_per_like = math.ceil(40 / len(db_likes))
     rec_movies = []
@@ -181,8 +190,7 @@ async def get_recs_from_likes(db_likes: list, group_id: int, db: session):
         movie = db.query(models.Movie).filter(models.Movie.id == like.movie_id).first()
         tmdb_like_ids.append(movie.tmdb_id)
     
-    db_group = db.query(models.Group).filter(
-        models.Group.id == group_id).first()
+
 
     async def get_recs_for_movie(client, id):
         base_url = "https://api.themoviedb.org/3/movie/{0}/recommendations?api_key={1}&language=en-US&page=1"
@@ -275,4 +283,5 @@ async def get_recs_from_likes(db_likes: list, group_id: int, db: session):
     db.commit()
     db.refresh(db_group)
 
+    # return {"movies": inserted_movies_from_tmdb["movies"] + movies_to_display_in_db}
     return db_group

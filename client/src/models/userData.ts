@@ -39,6 +39,7 @@ export interface IGroup {
   users?: IUserIn[];
   release_period?: IReleasePeriod;
   likes?: ILike[];
+  processed_likes?: ILike[];
   genres?: IGenre[];
   movies?: IMovie[];
 }
@@ -54,7 +55,7 @@ export interface IMovie {
   genres: IGenre[];
 }
 
-interface ILike {
+export interface ILike {
   group_id: number;
   movie_id: number;
   id: number;

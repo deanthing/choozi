@@ -33,6 +33,7 @@ class Group(Base):
     id = Column(Integer, primary_key=True)
     users = relationship("User", backref="group", lazy=True)
     likes = relationship("Like", backref="group", lazy=True)
+    processed_likes = relationship("ProcessedLike", backref="group", lazy=True)
     release_period_id = Column(Integer, ForeignKey("releaseperiod.id"))
     release_period = relationship("ReleasePeriod")
     genres = relationship(
@@ -84,6 +85,13 @@ class Like(Base):
     id = Column(Integer, primary_key=True)
     group_id = Column(Integer, ForeignKey("group.id"), nullable=False)
     movie_id = Column(Integer, ForeignKey("movie.id"), nullable=False)
+
+class ProcessedLike(Base):
+    __tablename__ = "processedlike"
+    id = Column(Integer, primary_key=True)
+    group_id = Column(Integer, ForeignKey("group.id"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movie.id"), nullable=False)
+
 
 
 movie_genre_association = Table(
