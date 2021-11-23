@@ -1,0 +1,10 @@
+.bg {
+  background-image: url("../../../assets/images/wallpaper.png");
+  position: fixed;
+  top: 0;
+  width: 150%;
+  height: 150%;
+  background-size: cover;
+  overflow: hidden;
+  background-position: center;
+}

@@ -7,7 +7,7 @@ from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from fastapi.middleware.cors import CORSMiddleware
 
-from data.get_movies import get_recs_from_likes, store_all_movies_v2
+from data.get_movies import get_recs_from_likes, store_all_movies_v2, check_end_game_likes
 from sql.schemas.release_period import ReleasePeriodCreate, ReleasePeriodOut
 from sql.schemas.user import UserCreate, UserOut, UserBase
 from sql.schemas.group import GroupCreate, GroupOut
@@ -27,7 +27,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:4200'],
+    allow_origins=['*'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -78,8 +78,17 @@ async def close_room(socket_id, data):
         to=str(data)
     )
 
+@app.sio.on('startRoom')
+async def close_room(socket_id, data):
+    await app.sio.emit(
+        event="roomStarted",
+        data=None, 
+        to=str(data)
+    )
+
 @app.sio.on('recsInserted')
 async def close_room(socket_id, data):
+    print("recs inserted")
     await app.sio.emit(
         event="newRecs",
         data=None, 
@@ -88,8 +97,9 @@ async def close_room(socket_id, data):
 
 @app.sio.on('newMovies')
 async def close_room(socket_id, data):
+    print("new movies generated")
     await app.sio.emit(
-        event="newMovies",
+        event="newMoviesGenerated",
         data=None, 
         to=str(data)
     )
@@ -386,9 +396,21 @@ async def get_initial_movies(
 ):
     # get group likes
     db_likes = Session.query(models.Like).filter(models.Like.group_id == group_id).all()
-    db_processed_likes = Session.query(models.Like).filter(
-        models.ProcessedLike.group_id == group_id).all()
 
+    # check likes for duplicate
+    # dupe_likes = await check_end_game_likes(db_likes, group_id, Session)
+    # if dupe_likes:
+    #     await app.sio.emit(
+    #         event="joinRoom",
+    #         data=json.dumps(dupe_likes), 
+    #         to=str(group_id)
+    #     )
+    #     print("emitted likes")
+
+
+    db_processed_likes = Session.query(models.ProcessedLike).filter(
+        models.ProcessedLike.group_id == group_id).all()
+    print(db_likes, db_processed_likes)
     likes_to_process = []
     for db_like in db_likes:
         already_processed = False

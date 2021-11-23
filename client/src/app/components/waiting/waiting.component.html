@@ -25,4 +25,6 @@
   </li>
 </ul>
 
-<button (click)="onStartRound()">Start Room</button>
+<button *ngIf="isOwner && moviesGenerated" (click)="onStartRound()">
+  Start Room
+</button>

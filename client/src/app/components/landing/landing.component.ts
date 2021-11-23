@@ -16,7 +16,6 @@ export class LandingComponent implements OnInit {
     private stateService: StateService
   ) {
     console.log('constructor landing', this.stateService.appPhase);
-    this.socketService.emit('hi', 'hi2');
 
     if (this.stateService.appPhase === '') {
       this.stateService.appPhase = 'landing';
@@ -27,11 +26,11 @@ export class LandingComponent implements OnInit {
   }
 
   ngOnInit(): void {}
+
   onJoin() {
     this.router.navigateByUrl('/code');
-    // console.log('objecclickt');
-    // this.socketService.emit('joinRoom', 6969);
   }
+
   onSwipe() {
     this.router.navigateByUrl('/swipe');
   }

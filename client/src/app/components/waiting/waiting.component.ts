@@ -19,6 +19,8 @@ export class WaitingComponent implements OnInit {
   usersJoined: IUser[] = [];
   isOwner?: boolean;
   userId?: number;
+  moviesGenerated: boolean = false;
+
   constructor(
     private apiService: ApiService,
     private router: Router,
@@ -45,6 +47,7 @@ export class WaitingComponent implements OnInit {
         .subscribe((group: IGroup) => {
           console.log('movies generated');
           this.stateService.group = group;
+          this.moviesGenerated = true;
         });
     }
   }
@@ -111,6 +114,18 @@ export class WaitingComponent implements OnInit {
         this.stateService.resetState();
         this.router.navigateByUrl('/');
       });
+
+    this.socketService
+      .recieveEmit('roomStarted')
+      // .pipe(
+      //   map((user: any) => {
+      //     return JSON.parse(user);
+      //   })
+      // )
+      .subscribe((data) => {
+        this.stateService.appPhase = 'swipe';
+        this.router.navigateByUrl('/swipe');
+      });
   }
 
   leaveRoom() {
@@ -159,10 +174,11 @@ export class WaitingComponent implements OnInit {
     {
       console.log('group not initialized');
     }
-    // need to setup variable routing for this
+    // TODO: need to setup variable routing for this
   }
 
   onStartRound() {
+    this.socketService.emit('startRoom', this.stateService.user?.group_id);
     this.stateService.appPhase = 'swipe';
     this.router.navigateByUrl('/swipe');
   }

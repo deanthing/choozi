@@ -114,7 +114,7 @@ def convert_movies_to_schema_v2(r: list):  # for movie detail pattern
                             StreamingProviderMovieIn(tmdb_id=prov["provider_id"]))
 
         else:
-            print("error getting provider for ", movie_json)
+            print("error getting provider for ", movie_json['original_title'])
             continue
         movie_schema = MovieCreate(
             tmdb_id=movie_json['id'],
@@ -178,8 +178,8 @@ async def get_recs_from_likes(db_likes: list, group_id: int, db: session):
     db.commit()
     db.refresh(db_group)
 
-    recs_per_like = math.ceil(40 / len(db_likes))
-    rec_movies = []
+    # recs_per_like = math.ceil(40 / len(db_likes))
+    # rec_movies = []
 
     db_likes = db.query(models.Like).filter(
         models.Like.group_id == group_id).distinct(models.Like.movie_id).all()
@@ -190,8 +190,6 @@ async def get_recs_from_likes(db_likes: list, group_id: int, db: session):
         movie = db.query(models.Movie).filter(models.Movie.id == like.movie_id).first()
         tmdb_like_ids.append(movie.tmdb_id)
     
-
-
     async def get_recs_for_movie(client, id):
         base_url = "https://api.themoviedb.org/3/movie/{0}/recommendations?api_key={1}&language=en-US&page=1"
         r = await client.get(base_url.format(id, API_KEY), timeout=None)
@@ -284,4 +282,33 @@ async def get_recs_from_likes(db_likes: list, group_id: int, db: session):
     db.refresh(db_group)
 
     # return {"movies": inserted_movies_from_tmdb["movies"] + movies_to_display_in_db}
+    print(db_group.__dict__)
     return db_group
+
+async def check_end_game_likes(likes: list, group_id: int, db: session):
+
+    db_group = db.query(models.Group).filter(models.Group.id == group_id).first()
+    num_users = len(db_group.users)
+    like_movie_ids = [like.movie_id for like in likes]
+    counts = dict()
+
+    # tally movies by likes in group
+    for movie_id in like_movie_ids:
+        if movie_id in counts:
+            counts[movie_id] += 1
+        else:
+            counts[movie_id] = 0
+
+    # check if all users liked a movie
+    found_movies = []
+    for key, value in counts.items():
+        if value == num_users:
+            movie = db.query(models.Movie).filter(models.Movie.id == key).first()
+            if movie is None: 
+                print("couldnt find movie in db", key)
+                continue
+            found_movies.append(movie)
+
+    return found_movies
+    
+
