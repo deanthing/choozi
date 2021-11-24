@@ -36,11 +36,14 @@ export class SwipeComponent implements OnInit {
   }
 
   updateStoreFromState() {
-    console.log('updating store from state service group');
     this.movieStore = this.stateService.group!.movies!;
-    console.log('movie store after pulling newly generated', this.movieStore);
-    // this.addMoviesFromStore();
-    // this ^ shouldnt be here, jsut becaues the store was updated doesnt mean that the card need to be updated, it will update the cards when necessary
+  }
+
+  insertRecsIntoStore(beforeRecsStateMovieCount: number) {
+    const recs = this.stateService.group?.movies!.slice(
+      beforeRecsStateMovieCount
+    );
+    this.movieStore = [...recs!].concat(this.movieStore);
   }
 
   postChoice(choice: any) {
@@ -61,17 +64,14 @@ export class SwipeComponent implements OnInit {
           console.log('like posted');
           this.apiService
             .getData('movierecs', this.stateService.user?.group_id)
-            .subscribe((group: IGroup) => {
-              this.stateService.group = group;
-              console.log('reccomendations pulled');
+            .subscribe(() => {
+              console.log('recs inserted');
               this.socketService.emit(
                 'recsInserted',
                 this.stateService.user?.group_id!
               );
             });
         });
-
-      // generate recs, then emit that recs have been created to group
     }
   }
 
@@ -132,8 +132,10 @@ export class SwipeComponent implements OnInit {
       this.apiService
         .getData('groups', this.stateService.user?.group_id!)
         .subscribe((group: IGroup) => {
+          let numMoviesBeforeRecs: number =
+            this.stateService.group!.movies!.length;
           this.stateService.group = group;
-          this.moveRecsToFrontOfStore();
+          this.insertRecsIntoStore(numMoviesBeforeRecs);
         });
     });
 

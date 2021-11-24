@@ -88,7 +88,7 @@ async def close_room(socket_id, data):
 
 @app.sio.on('recsInserted')
 async def close_room(socket_id, data):
-    print("recs inserted")
+    print("recs inserted for group:", data)
     await app.sio.emit(
         event="newRecs",
         data=None, 
